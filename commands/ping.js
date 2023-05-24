@@ -6,7 +6,7 @@ export default {
         .setDescription('Replies with Pong!'),
     category: 'Miscellaneous',
     usage: `/ping`,
-    execute: async (interaction) => {
+    execute: async (Tsukiko, interaction) => {
         await interaction.reply('Pong!')
     },
 }

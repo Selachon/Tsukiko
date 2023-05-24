@@ -8,7 +8,7 @@ export default async (Tsukiko, interaction) => {
 	}
 
 	try {
-		await cmd.execute(interaction)
+		await cmd.execute(Tsukiko, interaction)
 	} catch (e) {
 		console.error(e)
 		if (interaction.replied || interaction.deferred) {

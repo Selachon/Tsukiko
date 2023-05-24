@@ -27,7 +27,7 @@
 			"\t\t.setDescription('$2'),",
 			"\tcategory: '$3',",
 			"\tusage: `/$1 $4`,",
-			"\texecute: async (interaction) => {",
+			"\texecute: async (Tsukiko, interaction) => {",
 			"\t\t$0",
 			"\t},",
 			"}"
