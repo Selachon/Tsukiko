@@ -16,6 +16,9 @@
   "bugs": {
     "url": "https://github.com/Selachon/Tsukiko/issues"
   },
+  "overrides": {
+    "graceful-fs": "^4.2.11"
+  },
   "homepage": "https://github.com/Selachon/Tsukiko#readme",
   "dependencies": {
     "axios": "^1.4.0",
