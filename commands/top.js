@@ -31,11 +31,10 @@ export default {
         try {
             const osuUser = await getUser(osuser)
             const scores = await getBestScores(osuUser.id)
-            console.log(`https://osu.ppy.sh/scores/${scores[0].mode}/${scores[0].best_id}/download`)
+            console.log(`/scores/${scores[0].best_id}/download`)
 
             // Url of the image
-            const file = `https://osu.ppy.sh/scores/${scores[0].mode}/${scores[0].best_id}/download`
-
+            const file = `/scores/${scores[0].best_id}/download`
             download(file)
 
             const complete = new BB()

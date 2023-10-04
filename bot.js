@@ -1,25 +1,16 @@
 import { Client, Collection, GatewayIntentBits as GIB } from 'discord.js'
 import { config } from 'dotenv'
 import axios from 'axios'
+import https from 'https'
+import main from './main.js'
 
-config()
+config();
 
-const auth = await axios({
-    method: 'POST',
-    url: `https://osu.ppy.sh/oauth/token`,
-    headers: {
-        Accept: 'application/json',
-        "Content-Type": 'application/x-www-form-urlencoded'
-    },
-    data: {
-        client_id: process.env.OSU_CLIENT_ID,
-        client_secret: process.env.OSU_CLIENT_SECRET,
-        grant_type: 'client_credentials',
-        scope: 'public'
-    }
-})
+// (async function () {
+//     axios.defaults.headers.common.Authorization = `Bearer ${await osuLogin('client_credentials')}`
+// })()
+
 axios.defaults.baseURL = 'https://osu.ppy.sh/api/v2'
-axios.defaults.headers.common.Authorization = `Bearer ${auth.data.access_token}`
 
 const {
     DirectMessageReactions,
