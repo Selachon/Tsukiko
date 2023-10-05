@@ -3,7 +3,7 @@ import { config } from 'dotenv'
 import { setTimeout as wait } from 'timers/promises'
 import osuLogin from '../utils/osuApi/osuLogin.js'
 import getMe from '../utils/osuApi/getMe.js'
-import obj from '../utils/code.js'
+import obj from '../code.js'
 
 // auth
 
