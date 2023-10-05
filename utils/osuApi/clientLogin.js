@@ -6,7 +6,7 @@ config()
 export default async function () {
   var auth = await axios({
       method: 'POST',
-      url: `https://osu.ppy.sh/oauth/token`,
+      url: `https://osu.ppy.sh/oauth/token/`,
       headers: {
         Accept: 'application/json',
         "Content-Type": 'application/x-www-form-urlencoded'

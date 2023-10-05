@@ -1,13 +1,13 @@
 import { Client, Collection, GatewayIntentBits as GIB } from 'discord.js'
 import { config } from 'dotenv'
 import axios from 'axios'
-import https from 'https'
+import clientLogin from './utils/osuApi/clientLogin.js'
 import main from './main.js'
 
 config();
 
 // (async function () {
-//     axios.defaults.headers.common.Authorization = `Bearer ${await osuLogin('client_credentials')}`
+//     axios.defaults.headers.common.Authorization = `Bearer ${await clientLogin()}`
 // })()
 
 axios.defaults.baseURL = 'https://osu.ppy.sh/api/v2'

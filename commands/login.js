@@ -21,16 +21,14 @@ export default {
         }&redirect_uri=http://localhost:8080&response_type=code&scope=public+identify`,
       ephemeral: true
     })
-    await wait(10000)
+    await wait(20000)
     try {
       const { code } = obj
       var token = await osuLogin(code)
     } catch (e) {
-      console.log(e.message)
+      console.log(e)
       return
     }
-    console.log(token)
-    return
     try {
       var user = await getMe(token)
     } catch (e) {
