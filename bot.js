@@ -3,12 +3,13 @@ import { config } from 'dotenv'
 import axios from 'axios'
 import clientLogin from './utils/osuApi/clientLogin.js'
 import main from './main.js'
+import db from './utils/MongoDB/Connect.js'
 
 config();
 
-// (async function () {
-//     axios.defaults.headers.common.Authorization = `Bearer ${await clientLogin()}`
-// })()
+(async function () {
+    axios.defaults.headers.common.Authorization = `Bearer ${await clientLogin()}`
+})()
 
 axios.defaults.baseURL = 'https://osu.ppy.sh/api/v2'
 

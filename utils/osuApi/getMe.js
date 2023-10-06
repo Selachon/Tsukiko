@@ -8,8 +8,7 @@ export default async function (token) {
       "Content-Type": 'application/json',
       Accept: 'application/json',
       Authorization: `Bearer ${token}`
-    },
-    params: { limit: 50 }
+    }
   })
   return res.data
 }

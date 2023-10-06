@@ -7,35 +7,40 @@ import {
     ComponentType as CT
 } from 'discord.js'
 import { config } from 'dotenv'
-import { setTimeout } from 'timers/promises'
+import { setTimeout as wait } from 'timers/promises'
 import getEmoji from '../utils/getEmoji.js'
 import getRankImage from '../utils/getRankImage.js'
 import getUser from '../utils/osuApi/getUser.js'
 import getBeatmap from '../utils/osuApi/getBeatmap.js'
 import getBestScores from '../utils/osuApi/getBestScores.js'
-import download from '../utils/download.cjs'
+import findOne from '../utils/MongoDB/findOne.js'
+import renderReplay from '../utils/renderReplay.js'
+import getReplay from '../utils/osuApi/getReplay.js'
 
-const wait = setTimeout
 config()
 
 export default {
     data: new SCB()
         .setName('top')
-        .setDescription('Mira tus top scores de cualquier modo')
-        .addStringOption(op => op.setName('usuario').setDescription('Cualquier nombre de usuario de osu! o su ID')
-            .setRequired(true)),
+        .setDescription('Mira tus top scores o de otro usuario')
+        .addStringOption(op => op.setName('usuario').setDescription('Cualquier nombre de usuario de osu! o su ID')),
     category: 'osu!',
     usage: `/top`,
     execute: async (Tsukiko, interaction) => {
-        let osuser = interaction.options.getString('usuario')
+        var osuser = interaction.options.getString('usuario')
+        if (!osuser) {
+            var data = await findOne(interaction.user.id)
+            if (!data)
+                return interaction.reply({
+                    content: 'No tienes seteado ningún usuario ni especificaste un usuario.\nPara usar un usuario predeterminado, usa **/set**',
+                    ephemeral: true
+                })
+            osuser = data.osu.username
+        }
+
         try {
             const osuUser = await getUser(osuser)
             const scores = await getBestScores(osuUser.id)
-            console.log(`/scores/${scores[0].best_id}/download`)
-
-            // Url of the image
-            const file = `/scores/${scores[0].best_id}/download`
-            download(file)
 
             const complete = new BB()
                 .setLabel('Completo')
@@ -89,14 +94,14 @@ export default {
             const pageButtons2 = new ARB()
                 .addComponents(first2, prev2, next2, last2)
 
-            let page = 0
+            var page = 0
 
-            let { beatmap, beatmapset } = scores[page]
+            let { beatmap, beatmapset, replay } = scores[page]
             const resBM = await getBeatmap(beatmap.id)
             beatmap.max_combo = resBM.data.max_combo
             let mode = beatmap.mode == 'osu' ? 'Standard' : beatmap.mode == 'mania' ? 'Mania' : beatmap.mode == 'fruits' ? 'CTB' : 'Taiko'
 
-            const bigEmbed = fullDetailEmbed(Tsukiko, scores[0], mode)
+            const bigEmbed = fullDetailEmbed(Tsukiko, scores[page], mode)
             const compactEmbed = compactDetailEmbed(Tsukiko, scores, mode)
 
             const response = await interaction.reply({
@@ -109,7 +114,7 @@ export default {
                 components: [buttons]
             })
 
-            const c = response.createMessageComponentCollector({ componentType: CT.Button, time: 120000 })
+            const c = response.createMessageComponentCollector({ filter: i => i.user.id === interaction.user.id, componentType: CT.Button, time: 120000 })
 
             c.on('collect', async i => {
                 if (i.customId == 'complete') {
@@ -122,7 +127,28 @@ export default {
                             attachment: `https:${beatmapset.preview_url}`
                         }]
                     })
-                    const c2 = pages.createMessageComponentCollector({ componentType: CT.Button, time: 120000 })
+                    if (replay && beatmap.mode === 'osu') await pages.interaction.message.react('🎬')
+                    else await pages.interaction.message.reactions.removeAll()
+                    const filter = (r, u) =>
+                        ['🎬'].includes(r.emoji.name) && u.id === interaction.user.id && replay
+
+                    const c3 = pages.interaction.message.createReactionCollector({ filter, time: 120000, max: 1 })
+
+                    c3.on('collect', async r => {
+                        if (r.emoji.name == '🎬') {
+                            let replay = await getReplay(Tsukiko, scores[page], osuUser)
+                            let pagesMsg = await pages.interaction.message.reply({
+                                content: 'Descargando replay...',
+                                ephemeral: true
+                            })
+                            await wait(1000)
+                            await renderReplay(replay.url, osuUser, undefined, pages.interaction, pagesMsg)
+                        }
+                    })
+                    c3.on('end', async () => {
+                        await pages.interaction.message.reactions.removeAll()
+                    })
+                    const c2 = pages.createMessageComponentCollector({ filter: i => i.user.id === interaction.user.id, componentType: CT.Button, time: 120000 })
 
                     c2.on('collect', async i2 => {
                         if (i2.customId == 'prev') {
@@ -149,7 +175,7 @@ export default {
                         components: [buttons, pageButtons2],
                         files: []
                     })
-                    const c2 = pages.createMessageComponentCollector({ componentType: CT.Button, time: 120000 })
+                    const c2 = pages.createMessageComponentCollector({ filter: i => i.user.id === interaction.user.id, componentType: CT.Button, time: 120000 })
 
                     c2.on('collect', async i2 => {
                         if (i2.customId == 'prev2') {
@@ -192,7 +218,7 @@ async function pagesEmbed(Tsukiko, scores, interaction, buttons, pageButtons, pa
     const resBM = await getBeatmap(beatmap.id)
     beatmap.max_combo = resBM.data.max_combo
     let mode = beatmap.mode == 'osu' ? 'Standard' : beatmap.mode == 'mania' ? 'Mania' : beatmap.mode == 'fruits' ? 'CTB' : 'Taiko'
-    await interaction.update({
+    let score = await interaction.update({
         embeds: [fullDetailEmbed(Tsukiko, play, mode, page)],
         components: [buttons, pageButtons],
         files: [{
@@ -200,6 +226,8 @@ async function pagesEmbed(Tsukiko, scores, interaction, buttons, pageButtons, pa
             attachment: `https:${beatmapset.preview_url}`
         }]
     })
+    if (play.replay && beatmap.mode === 'osu') await score.interaction.message.react('🎬')
+    else await score.interaction.message.reactions.removeAll()
 }
 
 async function pagesCompactEmbed(Tsukiko, scores, interaction, buttons, pageButtons, page) {
