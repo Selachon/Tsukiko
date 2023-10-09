@@ -2,7 +2,7 @@ import { Client, Collection, GatewayIntentBits as GIB } from 'discord.js'
 import { config } from 'dotenv'
 import axios from 'axios'
 import clientLogin from './utils/osuApi/clientLogin.js'
-import main from './main.js'
+// import main from './main.js'
 import db from './utils/MongoDB/Connect.js'
 
 config();

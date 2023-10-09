@@ -23,11 +23,26 @@ export default {
     data: new SCB()
         .setName('top')
         .setDescription('Mira tus top scores o de otro usuario')
-        .addStringOption(op => op.setName('usuario').setDescription('Cualquier nombre de usuario de osu! o su ID')),
+        .addStringOption(op => op.setName('usuario').setDescription('Cualquier nombre de usuario de osu! o su ID'))
+        .addStringOption(op => op.setName('modo').setDescription('El modo de juego del cual quieres ver las top plays')
+            .addChoices({
+                name: 'Standard',
+                value: 'osu'
+            }, {
+                name: 'Mania',
+                value: 'mania'
+            }, {
+                name: 'Catch The Beat',
+                value: 'fruits'
+            }, {
+                name: 'Taiko',
+                value: 'taiko'
+            })),
     category: 'osu!',
     usage: `/top`,
     execute: async (Tsukiko, interaction) => {
         var osuser = interaction.options.getString('usuario')
+        var osumode = interaction.options.getString('modo')
         if (!osuser) {
             var data = await findOne(interaction.user.id)
             if (!data)
@@ -40,7 +55,7 @@ export default {
 
         try {
             const osuUser = await getUser(osuser)
-            const scores = await getBestScores(osuUser.id)
+            const scores = !osumode ? await getBestScores(osuUser.id) : await getBestScores(osuUser.id, osumode)
 
             const complete = new BB()
                 .setLabel('Completo')
@@ -132,16 +147,17 @@ export default {
                     const filter = (r, u) =>
                         ['🎬'].includes(r.emoji.name) && u.id === interaction.user.id && replay
 
-                    const c3 = pages.interaction.message.createReactionCollector({ filter, time: 120000, max: 1 })
+                    const c3 = pages.interaction.message.createReactionCollector({ filter, time: 120000 })
 
                     c3.on('collect', async r => {
                         if (r.emoji.name == '🎬') {
+                            await pages.interaction.message.reactions.removeAll()
                             let replay = await getReplay(Tsukiko, scores[page], osuUser)
                             let pagesMsg = await pages.interaction.message.reply({
                                 content: 'Descargando replay...',
                                 ephemeral: true
                             })
-                            await wait(1000)
+                            await wait(1500)
                             await renderReplay(replay.url, osuUser, undefined, pages.interaction, pagesMsg)
                         }
                     })
@@ -175,6 +191,7 @@ export default {
                         components: [buttons, pageButtons2],
                         files: []
                     })
+                    await pages.interaction.message.reactions.removeAll()
                     const c2 = pages.createMessageComponentCollector({ filter: i => i.user.id === interaction.user.id, componentType: CT.Button, time: 120000 })
 
                     c2.on('collect', async i2 => {
@@ -334,24 +351,24 @@ function compactDetailEmbed(Tsukiko, data, mode, page) {
     }
     if (!page) return new EB()
         .setAuthor({
-            name: user.username,
-            iconURL: user.avatar_url,
+            name: `Perfil de ${user.username}`,
             url: `https://osu.ppy.sh/users/${user.id}`
         })
-        .setTitle(`Top 10 scores de ${mode}`)
+        .setTitle(`Top 50 scores de ${mode}`)
         .setDescription(compactScores(Tsukiko, 5, data)[0])
+        .setThumbnail(user.avatar_url)
         .setFooter({
             text: 'Si no te aparecen los controles de páginas, da clic en el botón de Compacto - 1'
         })
 
     return new EB()
         .setAuthor({
-            name: user.username,
-            iconURL: user.avatar_url,
+            name: `Perfil de ${user.username}`,
             url: `https://osu.ppy.sh/users/${user.id}`
         })
-        .setTitle(`Top 10 scores de ${mode}`)
+        .setTitle(`Top 50 scores de ${mode}`)
         .setDescription(compactScores(Tsukiko, 5, data)[page])
+        .setThumbnail(user.avatar_url)
         .setFooter({
             text: 'Si no te aparecen los controles de páginas, da clic en el botón de Compacto - ' + `${page + 1}`
         })

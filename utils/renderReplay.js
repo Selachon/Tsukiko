@@ -3,10 +3,10 @@ import { config } from "dotenv"
 config()
 import newEmbed from '../utils/EmbedBuilder.js'
 import myAvatarUrl from "./myAvatarUrl.js"
+import { setTimeout as wait } from 'timers/promises'
 const render = new ordr.Client(process.env.ORDR_KEY)
 
 export default async function (url, user, skin = 'boop', interaction, iMsg) {
-  render.start()
   let embed = newEmbed(interaction, {
     author: {
       name: interaction.client.user.username,
@@ -43,7 +43,7 @@ export default async function (url, user, skin = 'boop', interaction, iMsg) {
     })
   })
   render.on('render_added', data => {
-    if (replay.renderID != data.renderID) return
+    if (data.renderID != replay.renderID) return
     iMsg.edit({
       content: '',
       embeds: [embed.setTitle('Render added!')
@@ -52,7 +52,7 @@ export default async function (url, user, skin = 'boop', interaction, iMsg) {
       ephemeral: true
     })
     render.on('render_progress', data => {
-      if (replay.renderID != data.renderID) return
+      if (data.renderID != replay.renderID) return
       iMsg.edit({
         content: '',
         embeds: [embed.setTitle(data.progress)
@@ -61,17 +61,18 @@ export default async function (url, user, skin = 'boop', interaction, iMsg) {
       })
     })
     render.on('render_done', async data => {
-      if (replay.renderID != data.renderID) return
+      if (data.renderID != replay.renderID) return
+      await wait(3000)
       let msg = await iMsg.edit({
         content: '',
         embeds: [embed.setTitle('Render finished!')
           .setColor('Green')
         ]
       })
-      msg.reply({ content: data.videoUrl })
+      return await msg.reply({ content: `${interaction.user}\n${data.videoUrl}` })
     })
     render.on('render_failed', data => {
-      if (replay.renderID != data.renderID) return
+      if (data.renderID != replay.renderID) return
       iMsg.edit({
         content: '',
         embeds: [embed.setTitle('Render failed')
@@ -81,4 +82,5 @@ export default async function (url, user, skin = 'boop', interaction, iMsg) {
       })
     })
   })
+  render.start()
 }
