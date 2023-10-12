@@ -7,6 +7,7 @@ import { setTimeout as wait } from 'timers/promises'
 const render = new ordr.Client(process.env.ORDR_KEY)
 
 export default async function (url, user, skin = 'boop', interaction, iMsg) {
+  render.start()
   let embed = newEmbed(interaction, {
     author: {
       name: interaction.client.user.username,
@@ -44,13 +45,15 @@ export default async function (url, user, skin = 'boop', interaction, iMsg) {
   })
   render.on('render_added', data => {
     if (data.renderID != replay.renderID) return
-    iMsg.edit({
-      content: '',
-      embeds: [embed.setTitle('Render added!')
-        .setDescription('Soon it will start rendering.')
-      ],
-      ephemeral: true
-    })
+    setTimeout(() => {
+      iMsg.edit({
+        content: '',
+        embeds: [embed.setTitle('Render added!')
+          .setDescription('Soon it will start rendering.')
+        ],
+        ephemeral: true
+      })
+    }, 1500)
     render.on('render_progress', data => {
       if (data.renderID != replay.renderID) return
       iMsg.edit({
@@ -82,5 +85,4 @@ export default async function (url, user, skin = 'boop', interaction, iMsg) {
       })
     })
   })
-  render.start()
 }

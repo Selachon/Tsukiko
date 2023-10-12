@@ -7,7 +7,8 @@ export default function (rank) {
     S: 'https://i.ibb.co/m5NLSnm/S.png',
     SH: 'https://i.ibb.co/gzTRXSS/SH.png',
     X: 'https://i.ibb.co/NnQGL5K/X.png',
-    XH: 'https://i.ibb.co/hRFFsnG/XH.png'
+    XH: 'https://i.ibb.co/hRFFsnG/XH.png',
+    F: 'https://i.ibb.co/DL2yxZp/NM.png'
   }
 
   return ranks[rank]

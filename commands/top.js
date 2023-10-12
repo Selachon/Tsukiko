@@ -1,5 +1,4 @@
 import {
-    EmbedBuilder as EB,
     SlashCommandBuilder as SCB,
     ButtonBuilder as BB,
     ButtonStyle as BS,
@@ -8,14 +7,16 @@ import {
 } from 'discord.js'
 import { config } from 'dotenv'
 import { setTimeout as wait } from 'timers/promises'
-import getEmoji from '../utils/getEmoji.js'
-import getRankImage from '../utils/getRankImage.js'
 import getUser from '../utils/osuApi/getUser.js'
 import getBeatmap from '../utils/osuApi/getBeatmap.js'
 import getBestScores from '../utils/osuApi/getBestScores.js'
 import findOne from '../utils/MongoDB/findOne.js'
 import renderReplay from '../utils/renderReplay.js'
 import getReplay from '../utils/osuApi/getReplay.js'
+import fullDetailEmbed from '../utils/fullDetailEmbed.js'
+import compactDetailEmbed from '../utils/compactDetailEmbed.js'
+import pagesCompactEmbed from '../utils/pagesCompactEmbed.js'
+import pagesEmbed from '../utils/pagesEmbed.js'
 
 config()
 
@@ -116,7 +117,7 @@ export default {
             beatmap.max_combo = resBM.data.max_combo
             let mode = beatmap.mode == 'osu' ? 'Standard' : beatmap.mode == 'mania' ? 'Mania' : beatmap.mode == 'fruits' ? 'CTB' : 'Taiko'
 
-            const bigEmbed = fullDetailEmbed(Tsukiko, scores[page], mode)
+            const bigEmbed = fullDetailEmbed(Tsukiko, scores[page], mode, false, false)
             const compactEmbed = compactDetailEmbed(Tsukiko, scores, mode)
 
             const response = await interaction.reply({
@@ -229,34 +230,6 @@ export default {
     },
 }
 
-async function pagesEmbed(Tsukiko, scores, interaction, buttons, pageButtons, page) {
-    let play = scores[page]
-    let { beatmap, beatmapset } = play
-    const resBM = await getBeatmap(beatmap.id)
-    beatmap.max_combo = resBM.data.max_combo
-    let mode = beatmap.mode == 'osu' ? 'Standard' : beatmap.mode == 'mania' ? 'Mania' : beatmap.mode == 'fruits' ? 'CTB' : 'Taiko'
-    let score = await interaction.update({
-        embeds: [fullDetailEmbed(Tsukiko, play, mode, page)],
-        components: [buttons, pageButtons],
-        files: [{
-            name: `${beatmapset.title}.mp3`,
-            attachment: `https:${beatmapset.preview_url}`
-        }]
-    })
-    if (play.replay && beatmap.mode === 'osu') await score.interaction.message.react('🎬')
-    else await score.interaction.message.reactions.removeAll()
-}
-
-async function pagesCompactEmbed(Tsukiko, scores, interaction, buttons, pageButtons, page) {
-    let { beatmap } = scores[page]
-    let mode = beatmap.mode == 'osu' ? 'Standard' : beatmap.mode == 'mania' ? 'Mania' : beatmap.mode == 'fruits' ? 'CTB' : 'Taiko'
-    await interaction.update({
-        embeds: [compactDetailEmbed(Tsukiko, scores, mode, page)],
-        components: [buttons, pageButtons],
-        files: []
-    })
-}
-
 function splitArray(arr, chunkSize) {
     let result = []
 
@@ -266,110 +239,4 @@ function splitArray(arr, chunkSize) {
     }
 
     return result
-}
-
-function compactScores(Tsukiko, pages = 1, data) {
-    let score = ''
-    var scores = []
-    if (pages <= 0) pages = 1
-    for (let j = 0; j < pages; j++) {
-        for (let i = 10 * j; i < 10 * (j + 1); i++) {
-            score += `**${i + 1}.** [${data[i].beatmapset.title} (${data[i].beatmap.version}) [${data[i].beatmap.difficulty_rating}\⭐]](${data[i].beatmap.url})
-${getEmoji(Tsukiko, data[i].rank)} ${!data[i].mods[0] ? '' : `${data[i].mods.map(mod => getEmoji(Tsukiko, mod)).join('')} `}${(data[i].accuracy * 100).toFixed(2)}% | **${(data[i].pp).toFixed(2)}pp** <t:${new Date(data[i].created_at).getTime() / 1000}:R>\n`
-        }
-        scores.push(score)
-        score = ''
-    }
-    return scores
-}
-
-function fullDetailEmbed(Tsukiko, play, mode, page) {
-    let { user, beatmap, beatmapset, created_at, max_combo, rank, mods, accuracy, pp } = play
-    if (!page) return new EB()
-        .setAuthor({
-            name: `Top 50 scores de ${mode} de ${user.username}`,
-            iconURL: user.avatar_url,
-            url: `https://osu.ppy.sh/users/${user.id}`
-        })
-        .setTitle(`**1.** ${beatmapset.title_unicode}${beatmapset.title_unicode == beatmapset.title ? '' : ` (${beatmapset.title})`}`)
-        .setDescription(`Dificultad: [**${beatmap.version}** [${beatmap.difficulty_rating}\⭐]](${beatmap.url})${!mods[0] ? '' : `
-Mods: ${mods.map(mod => getEmoji(Tsukiko, mod)).join('')}`}
-Artista: **${beatmapset.artist_unicode}**${beatmapset.artist_unicode == beatmapset.artist ? '' : ` (${beatmapset.artist})`}
-Mapper: **${beatmapset.creator}**`)
-        .setFields({
-            name: 'Combo',
-            value: `${max_combo}/${beatmap.max_combo}${max_combo == beatmap.max_combo ? ' FC' : ''}`,
-            inline: true
-        }, {
-            name: 'Acc',
-            value: `${(accuracy * 100).toFixed(2)}%`,
-            inline: true
-        }, {
-            name: 'PP',
-            value: `${(pp).toFixed(2)}pp`,
-            inline: true
-        })
-        .setImage(beatmapset.covers['card@2x'])
-        .setThumbnail(getRankImage(rank))
-        .setTimestamp(new Date(created_at).getTime())
-
-    return new EB()
-        .setAuthor({
-            name: `Top 50 scores de ${mode} de ${user.username}`,
-            iconURL: user.avatar_url,
-            url: `https://osu.ppy.sh/users/${user.id}`
-        })
-        .setTitle(`**${page + 1}.** ${beatmapset.title_unicode}${beatmapset.title_unicode == beatmapset.title ? '' : ` (${beatmapset.title})`}`)
-        .setDescription(`Dificultad: [**${beatmap.version}** [${beatmap.difficulty_rating}\⭐]](${beatmap.url})${!mods[0] ? '' : `
-Mods: ${mods.map(mod => getEmoji(Tsukiko, mod)).join('')}`}
-Artista: **${beatmapset.artist_unicode}**${beatmapset.artist_unicode == beatmapset.artist ? '' : ` (${beatmapset.artist})`}
-Mapper: **${beatmapset.creator}**`)
-        .setFields({
-            name: 'Combo',
-            value: `${max_combo}/${beatmap.max_combo}${max_combo == beatmap.max_combo ? ' FC' : ''}`,
-            inline: true
-        }, {
-            name: 'Acc',
-            value: `${(accuracy * 100).toFixed(2)}%`,
-            inline: true
-        }, {
-            name: 'PP',
-            value: `${(pp).toFixed(2)}pp`,
-            inline: true
-        })
-        .setImage(beatmapset.covers['card@2x'])
-        .setThumbnail(getRankImage(rank))
-        .setTimestamp(new Date(created_at).getTime())
-}
-
-function compactDetailEmbed(Tsukiko, data, mode, page) {
-    let { user } = data[0]
-    var scores = ''
-    for (let i = 0; i < 10; i++) {
-        scores += `**${i + 1}.** [${data[i].beatmapset.title} (${data[i].beatmap.version}) [${data[i].beatmap.difficulty_rating}\⭐]](${data[i].beatmap.url})
-**${data[i].rank}** (+${data[i].mods.join('')}) ${(data[i].accuracy * 100).toFixed(2)}% | **${(data[i].pp).toFixed(2)}pp** <t:${new Date(data[i].created_at).getTime() / 1000}:R>\n`
-    }
-    if (!page) return new EB()
-        .setAuthor({
-            name: `Perfil de ${user.username}`,
-            url: `https://osu.ppy.sh/users/${user.id}`
-        })
-        .setTitle(`Top 50 scores de ${mode}`)
-        .setDescription(compactScores(Tsukiko, 5, data)[0])
-        .setThumbnail(user.avatar_url)
-        .setFooter({
-            text: 'Si no te aparecen los controles de páginas, da clic en el botón de Compacto - 1'
-        })
-
-    return new EB()
-        .setAuthor({
-            name: `Perfil de ${user.username}`,
-            url: `https://osu.ppy.sh/users/${user.id}`
-        })
-        .setTitle(`Top 50 scores de ${mode}`)
-        .setDescription(compactScores(Tsukiko, 5, data)[page])
-        .setThumbnail(user.avatar_url)
-        .setFooter({
-            text: 'Si no te aparecen los controles de páginas, da clic en el botón de Compacto - ' + `${page + 1}`
-        })
 }
