@@ -1,9 +1,11 @@
+import setLatestMap from "./MongoDB/setLatestMap.js"
 import fullDetailEmbed from "./fullDetailEmbed.js"
 import getBeatmap from "./osuApi/getBeatmap.js"
 
 export default async function (Tsukiko, scores, interaction, buttons, pageButtons, page) {
   let play = scores[page]
   let { beatmap, beatmapset } = play
+  setLatestMap(beatmap.id)
   const resBM = await getBeatmap(beatmap.id)
   beatmap.max_combo = resBM.data.max_combo
   let mode = beatmap.mode == 'osu' ? 'Standard' : beatmap.mode == 'mania' ? 'Mania' : beatmap.mode == 'fruits' ? 'CTB' : 'Taiko'

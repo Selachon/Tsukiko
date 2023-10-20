@@ -17,6 +17,7 @@ import fullDetailEmbed from '../utils/fullDetailEmbed.js'
 import compactDetailEmbed from '../utils/compactDetailEmbed.js'
 import pagesCompactEmbed from '../utils/pagesCompactEmbed.js'
 import pagesEmbed from '../utils/pagesEmbed.js'
+import setLatestMap from '../utils/MongoDB/setLatestMap.js'
 
 config()
 
@@ -117,7 +118,7 @@ export default {
             beatmap.max_combo = resBM.data.max_combo
             let mode = beatmap.mode == 'osu' ? 'Standard' : beatmap.mode == 'mania' ? 'Mania' : beatmap.mode == 'fruits' ? 'CTB' : 'Taiko'
 
-            const bigEmbed = fullDetailEmbed(Tsukiko, scores[page], mode, false, false)
+            const bigEmbed = await fullDetailEmbed(Tsukiko, scores[page], mode, false, false)
             const compactEmbed = compactDetailEmbed(Tsukiko, scores, mode)
 
             const response = await interaction.reply({
@@ -134,6 +135,7 @@ export default {
 
             c.on('collect', async i => {
                 if (i.customId == 'complete') {
+                    setLatestMap(beatmap.id)
                     page = 0
                     const pages = await i.update({
                         embeds: [bigEmbed],

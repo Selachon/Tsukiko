@@ -4,6 +4,7 @@ import getUser from '../utils/osuApi/getUser.js'
 import findOne from '../utils/MongoDB/findOne.js'
 import fullDetailEmbed from '../utils/fullDetailEmbed.js'
 import getBeatmap from '../utils/osuApi/getBeatmap.js'
+import setLatestMap from '../utils/MongoDB/setLatestMap.js'
 
 export default {
   data: new SCB()
@@ -53,12 +54,13 @@ export default {
             ephemeral: true
           })
         }
+        setLatestMap(recentScore.beatmap.id)
         const resBM = await getBeatmap(recentScore.beatmap.id)
         recentScore.beatmap.max_combo = resBM.data.max_combo
         let mode = recentScore.beatmap.mode == 'osu' ? 'Standard' : recentScore.beatmap.mode == 'mania' ? 'Mania' : recentScore.beatmap.mode == 'fruits' ? 'CTB' : 'Taiko'
 
         return interaction.reply({
-          embeds: [fullDetailEmbed(Tsukiko, recentScore, mode, true, true, excludeFails)]
+          embeds: [await fullDetailEmbed(Tsukiko, recentScore, mode, true, true, excludeFails)]
         })
       } catch (e) {
         await interaction.reply({

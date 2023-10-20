@@ -1,9 +1,11 @@
 import { EmbedBuilder } from "discord.js"
 import getEmoji from '../utils/getEmoji.js'
 import getRankImage from '../utils/getRankImage.js'
+import getUser from "./osuApi/getUser.js"
 
-export default function (Tsukiko, play, mode, justOne, isRecent, excludeFails, page) {
+export default async function (Tsukiko, play, mode, justOne, isRecent, excludeFails, page) {
   let { user, beatmap, beatmapset, created_at, max_combo, rank, mods, accuracy, pp } = play
+  var mapper = await getUser(beatmapset.creator)
   if (!justOne) {
     if (!page) return new EmbedBuilder()
       .setAuthor({
@@ -71,7 +73,7 @@ Mapper: **${beatmapset.creator}**`)
     .setDescription(`Dificultad: [**${beatmap.version}** [${beatmap.difficulty_rating}\⭐]](${beatmap.url})${!mods[0] ? '' : `
 Mods: ${mods.map(mod => getEmoji(Tsukiko, mod)).join('')}`}
 Artista: **${beatmapset.artist_unicode}**${beatmapset.artist_unicode == beatmapset.artist ? '' : ` (${beatmapset.artist})`}
-Mapper: **${beatmapset.creator}**`)
+<t:${new Date(created_at).getTime() / 1000}:R>`)
     .setFields({
       name: 'Combo',
       value: `${max_combo}/${beatmap.max_combo}${max_combo == beatmap.max_combo ? ' FC' : ''}`,
@@ -87,5 +89,8 @@ Mapper: **${beatmapset.creator}**`)
     })
     .setImage(beatmapset.covers['card@2x'])
     .setThumbnail(getRankImage(rank))
-    .setTimestamp(new Date(created_at).getTime())
+    .setFooter({
+      text: `Mapeado por ${mapper.username}`,
+      iconURL: mapper.avatar_url
+    })
 }
